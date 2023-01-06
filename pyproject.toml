@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "app-backend"
+version = "0.1.0"
+description = ""
+authors = ["Diego Alvarez S. <dialvarezs@gmail.com>"]
+readme = "README.md"
+packages = [{include = "app_backend"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+psycopg2-binary = "^2.9.5"
+alembic = "^1.9.0"
+fastapi = "^0.88.0"
+uvicorn = {extras = ["standard"], version = "^0.20.0"}
+sqlmodel = "^0.0.8"
+passlib = {extras = ["argon2"], version = "^1.7.4"}
+python-multipart = "^0.0.5"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+isort = "^5.11.4"
+poethepoet = "^0.16.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poe]
+envfile = ".env"
+
+[tool.poe.tasks]
+_isort = "isort -q app migrations"
+_black = "black -q app migrations"
+format = ["_isort", "_black"]
+start = { shell = "uvicorn app.main:app --reload" }
+shell = "poetry shell"
