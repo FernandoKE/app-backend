@@ -76,13 +76,13 @@ def auth_exception(detail: str = "Invalid authentication"):
     return HTTPException(status_code=401, detail=detail)
 
 
-class GroupChecker:
-    def __init__(self, allowed_groups: List[str]) -> None:
-        self.allowed_groups = allowed_groups
+class RoleChecker:
+    def __init__(self, allowed_roles: List[str]) -> None:
+        self.allowed_roles = allowed_roles
 
     def __call__(self, user: User = Depends(get_current_active_user)):
-        user_groups = [g.name for g in user.groups]
-        for group in self.allowed_groups:
-            if group in user_groups:
+        user_roles = [g.name for g in user.roles]
+        for role in self.allowed_roles:
+            if role in user_roles:
                 return
         raise HTTPException(status_code=403, detail="Operation not permited")

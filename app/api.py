@@ -7,11 +7,11 @@ from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlmodel import Session
 
 from app.crud import (
-    insert_group,
+    insert_role,
     insert_note,
     insert_user,
-    select_group_by_id,
-    select_groups,
+    select_role_by_id,
+    select_roles,
     select_note_by_id,
     select_notes,
     select_public_notes,
@@ -25,8 +25,8 @@ from app.crud import (
 from app.database import get_session
 from app.models import (
     APIToken,
-    Group,
-    GroupCreate,
+    Role,
+    RoleCreate,
     Note,
     NoteCreate,
     NoteUpdate,
@@ -37,7 +37,7 @@ from app.models import (
     UserUpdate,
 )
 from app.security import (
-    GroupChecker,
+    RoleChecker,
     authenticate_user,
     create_jwt,
     get_current_active_user,
@@ -46,9 +46,9 @@ from app.utilities import save_user_image
 
 router = APIRouter()
 
-allow_manage_users = GroupChecker(allowed_groups=["user_manager"])
-allow_manage_notes = GroupChecker(allowed_groups=["note_manager"])
-
+allow_manage_users = RoleChecker(allowed_roles=["user_manager"])
+allow_create_raffles = RoleChecker(allowed_roles=["raffle_creator"])
+allow_buy_raffles = RoleChecker(allowed_roles=["raffle_buyer"])
 
 @router.get(
     "/users/", response_model=List[UserRead], dependencies=[Depends(allow_manage_users)]
@@ -130,29 +130,29 @@ async def set_user_image(
     return update_user(user_id, UserUpdate(image_path=f"/{image_path}"), session)
 
 
-@router.get("/groups/", response_model=List[Group])
-async def get_groups(session: Session = Depends(get_session)):
-    return select_groups(session)
+@router.get("/roles/", response_model=List[Role])
+async def get_roles(session: Session = Depends(get_session)):
+    return select_roles(session)
 
 
-@router.get("/groups/{group_id}", response_model=Group)
-async def get_group(group_id: int, session: Session = Depends(get_session)):
+@router.get("/roles/{role_id}", response_model=Role)
+async def get_role(role_id: int, session: Session = Depends(get_session)):
     try:
-        return select_group_by_id(group_id, session)
+        return select_role_by_id(role_id, session)
     except NoResultFound:
-        raise HTTPException(status_code=404, detail="Group not found")
+        raise HTTPException(status_code=404, detail="Role not found")
 
 
 @router.post(
-    "/groups/", response_model=Group, #dependencies=[Depends(allow_manage_users)]
+    "/roles/", response_model=Role, #dependencies=[Depends(allow_manage_users)]
 )
-async def create_group(
-    group_data: GroupCreate, session: Session = Depends(get_session)
+async def create_role(
+    role_data: RoleCreate, session: Session = Depends(get_session)
 ):
     try:
-        return insert_group(group_data, session)
+        return insert_role(role_data, session)
     except IntegrityError:
-        raise HTTPException(status_code=400, detail="Group already exists")
+        raise HTTPException(status_code=400, detail="Role already exists")
 
 
 @router.post("/token", response_model=APIToken)
@@ -183,12 +183,12 @@ async def edit_note(
 ):
     note_db = select_note_by_id(note_id, session)
     if note_db.user != user:
-        allow_manage_notes(user)
+        allow_create_raffles(user)
     return update_note(note_id, note_data, session)
 
 
 @router.get(
-    "/notes/", response_model=List[Note], dependencies=[Depends(allow_manage_notes)]
+    "/notes/", response_model=List[Note], dependencies=[Depends(allow_create_raffles)]
 )
 async def get_notes(
     session: Session = Depends(get_session),
@@ -215,7 +215,7 @@ async def get_notes_me(
 @router.get(
     "/{user_id}/notes",
     response_model=List[Note],
-    dependencies=[Depends(allow_manage_notes)],
+    dependencies=[Depends(allow_create_raffles)],
 )
 async def get_user_notes(
     user_id: int,
@@ -233,5 +233,5 @@ async def get_note(
 ):
     note = select_note_by_id(note_id, session)
     if not note.is_public and note.user != user:
-        allow_manage_notes(user)
+        allow_create_raffles(user)
     return note

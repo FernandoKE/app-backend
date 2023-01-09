@@ -5,11 +5,11 @@ from sqlalchemy import Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 
-class UserGroupLink(SQLModel, table=True):
-    __tablename__ = "users_groups"
+class UserRoleLink(SQLModel, table=True):
+    __tablename__ = "users_roles"
 
     user_id: int = Field(primary_key=True, foreign_key="users.id")
-    group_id: int = Field(primary_key=True, foreign_key="groups.id")
+    role_id: int = Field(primary_key=True, foreign_key="roles.id")
 
 
 class UserBase(SQLModel):
@@ -26,8 +26,8 @@ class User(UserBase, table=True):
     image_path: str = Field(max_length=256, nullable=True)
     is_active: bool = Field(default=True)
 
-    groups: List["Group"] = Relationship(
-        back_populates="users", link_model=UserGroupLink
+    roles: List["Role"] = Relationship(
+        back_populates="users", link_model=UserRoleLink
     )
     notes: List["Note"] = Relationship(back_populates="user")
 
@@ -36,12 +36,12 @@ class UserRead(UserBase):
     id: int
     image_path: Optional[str]
     is_active: bool
-    groups: List["Group"]
+    roles: List["Role"]
 
 
 class UserCreate(UserBase):
     password: str = Field(max_length=256, nullable=True)
-    group_ids: List[int] = []
+    role_ids: List[int] = []
 
 
 class UserUpdate(SQLModel):
@@ -50,29 +50,29 @@ class UserUpdate(SQLModel):
     age: Optional[int]
     image_path: Optional[str]
     is_active: Optional[bool]
-    group_ids: Optional[List[int]]
+    role_ids: Optional[List[int]]
 
 
-class GroupBase(SQLModel):
+class RoleBase(SQLModel):
     name: str = Field(max_length=32, unique=True, index=True)
 
 
-class Group(GroupBase, table=True):
-    __tablename__ = "groups"
+class Role(RoleBase, table=True):
+    __tablename__ = "roles"
 
     id: int = Field(primary_key=True, default=None)
     is_active: bool = Field(default=True)
 
     users: List["User"] = Relationship(
-        back_populates="groups", link_model=UserGroupLink
+        back_populates="roles", link_model=UserRoleLink
     )
 
 
-class GroupCreate(GroupBase):
+class RoleCreate(RoleBase):
     pass
 
 
-class GroupUpdate(SQLModel):
+class RoleUpdate(SQLModel):
     name: Optional[str] = Field(max_length=32)
     is_active: Optional[bool]
 

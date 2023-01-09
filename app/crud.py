@@ -5,8 +5,8 @@ from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session
 
 from app.models import (
-    Group,
-    GroupCreate,
+    Role,
+    RoleCreate,
     Note,
     NoteCreate,
     NoteUpdate,
@@ -24,12 +24,12 @@ def select_users(session: Session) -> List[User]:
 
 
 def insert_user(user: UserCreate, session: Session) -> User:
-    user_db = User(**user.dict(exclude_unset=True, exclude={"group_ids"}))
+    user_db = User(**user.dict(exclude_unset=True, exclude={"role_ids"}))
     user_db.password = hash_password(user.password)
-    for group_id in user.group_ids:
+    for role_id in user.role_ids:
         try:
-            group = select_group_by_id(group_id, session)
-            user_db.groups.append(group)
+            role = select_role_by_id(role_id, session)
+            user_db.roles.append(role)
         except NoResultFound:
             pass
     session.add(user_db)
@@ -51,12 +51,12 @@ def select_user_by_username(username: str, session: Session) -> User:
 def update_user(user_id: int, user_data: UserUpdate, session: Session) -> User:
     user_db = select_user_by_id(user_id, session)
     for field, value in user_data.dict(exclude_none=True).items():
-        if field == "group_ids":
-            user_db.groups = []
-            for group_id in value:
+        if field == "role_ids":
+            user_db.roles = []
+            for role_id in value:
                 try:
-                    group = select_group_by_id(group_id, session)
-                    user_db.groups.append(group)
+                    role = select_role_by_id(role_id, session)
+                    user_db.roles.append(role)
                 except NoResultFound:
                     pass
         else:
@@ -78,22 +78,22 @@ def update_password(
     return user_db
 
 
-def select_groups(session: Session) -> List[Group]:
-    query = select(Group)
+def select_roles(session: Session) -> List[Role]:
+    query = select(Role)
     return session.execute(query).scalars().all()
 
 
-def select_group_by_id(group_id: int, session: Session) -> Group:
-    query = select(Group).where(Group.id == group_id)
+def select_role_by_id(role_id: int, session: Session) -> Role:
+    query = select(Role).where(Role.id == role_id)
     return session.execute(query).scalar_one()
 
 
-def insert_group(group: GroupCreate, session: Session) -> Group:
-    group_db = Group(**group.dict(exclude_unset=True))
-    session.add(group_db)
+def insert_role(role: RoleCreate, session: Session) -> Role:
+    role_db = Role(**role.dict(exclude_unset=True))
+    session.add(role_db)
     session.commit()
 
-    return group_db
+    return role_db
 
 
 def insert_note(note_data: NoteCreate, user: User, session: Session) -> Note:
