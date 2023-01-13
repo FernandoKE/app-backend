@@ -8,17 +8,11 @@ from sqlmodel import Session
 
 from app.crud import (
     insert_role,
-    insert_note,
     insert_user,
     select_role_by_id,
     select_roles,
-    select_note_by_id,
-    select_notes,
-    select_public_notes,
     select_user_by_id,
-    select_user_notes,
     select_users,
-    update_note,
     update_password,
     update_user,
 )
@@ -27,9 +21,6 @@ from app.models import (
     APIToken,
     Role,
     RoleCreate,
-    Note,
-    NoteCreate,
-    NoteUpdate,
     PasswordChange,
     User,
     UserCreate,
@@ -164,74 +155,3 @@ async def login(
     token = create_jwt({"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
 
-
-@router.post("/notes/", response_model=Note)
-async def create_note(
-    note_data: NoteCreate,
-    user: User = Depends(get_current_active_user),
-    session: Session = Depends(get_session),
-):
-    return insert_note(note_data, user, session)
-
-
-@router.patch("/notes/{note_id}", response_model=Note)
-async def edit_note(
-    note_id: int,
-    note_data: NoteUpdate,
-    user: User = Depends(get_current_active_user),
-    session: Session = Depends(get_session),
-):
-    note_db = select_note_by_id(note_id, session)
-    if note_db.user != user:
-        allow_create_raffles(user)
-    return update_note(note_id, note_data, session)
-
-
-@router.get(
-    "/notes/", response_model=List[Note], dependencies=[Depends(allow_create_raffles)]
-)
-async def get_notes(
-    session: Session = Depends(get_session),
-):
-    return select_notes(session)
-
-
-@router.get("/notes/public", response_model=List[Note])
-async def get_public_notes(
-    session: Session = Depends(get_session),
-):
-    return select_public_notes(session)
-
-
-@router.get("/me/notes/", response_model=List[Note])
-async def get_notes_me(
-    user: User = Depends(get_current_active_user),
-    session: Session = Depends(get_session),
-    archived: Optional[bool] = None,
-):
-    return select_user_notes(user.id, session, archived)
-
-
-@router.get(
-    "/{user_id}/notes",
-    response_model=List[Note],
-    dependencies=[Depends(allow_create_raffles)],
-)
-async def get_user_notes(
-    user_id: int,
-    session: Session = Depends(get_session),
-    archived: Optional[bool] = None,
-):
-    return select_user_notes(user_id, session, archived)
-
-
-@router.get("/notes/{note_id}", response_model=Note)
-async def get_note(
-    note_id: int,
-    user: User = Depends(get_current_active_user),
-    session: Session = Depends(get_session),
-):
-    note = select_note_by_id(note_id, session)
-    if not note.is_public and note.user != user:
-        allow_create_raffles(user)
-    return note

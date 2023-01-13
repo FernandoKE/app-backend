@@ -7,9 +7,6 @@ from sqlmodel import Session
 from app.models import (
     Role,
     RoleCreate,
-    Note,
-    NoteCreate,
-    NoteUpdate,
     PasswordChange,
     User,
     UserCreate,
@@ -95,44 +92,3 @@ def insert_role(role: RoleCreate, session: Session) -> Role:
 
     return role_db
 
-
-def insert_note(note_data: NoteCreate, user: User, session: Session) -> Note:
-    note = Note(**note_data.dict(exclude_unset=True))
-    note.user = user
-    session.add(note)
-    session.commit()
-
-    return note
-
-
-def update_note(note_id: int, note_data: NoteUpdate, session: Session) -> Note:
-    note = select_note_by_id(note_id, session)
-    for field, value in note_data.dict(exclude_none=True).items():
-        setattr(note, field, value)
-    session.commit()
-
-    return note
-
-
-def select_note_by_id(note_id: int, session: Session) -> Note:
-    query = select(Note).where(Note.id == note_id)
-    return session.execute(query).scalar_one()
-
-
-def select_user_notes(
-    user_id: int, session: Session, archived: Optional[bool]
-) -> List[Note]:
-    query = select(Note).where(Note.user_id == user_id)
-    if archived is not None:
-        query = query.where(Note.is_archived == archived)
-    return session.execute(query).scalars().all()
-
-
-def select_notes(session: Session) -> List[Note]:
-    query = select(Note)
-    return session.execute(query).scalars().all()
-
-
-def select_public_notes(session: Session) -> List[Note]:
-    query = select(Note).where(Note.is_public == True)
-    return session.execute(query).scalars().all()

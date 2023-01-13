@@ -29,7 +29,6 @@ class User(UserBase, table=True):
     roles: List["Role"] = Relationship(
         back_populates="users", link_model=UserRoleLink
     )
-    notes: List["Note"] = Relationship(back_populates="user")
 
 
 class UserRead(UserBase):
@@ -75,43 +74,6 @@ class RoleCreate(RoleBase):
 class RoleUpdate(SQLModel):
     name: Optional[str] = Field(max_length=32)
     is_active: Optional[bool]
-
-
-class NoteBase(SQLModel):
-    title: str = Field(max_length=32)
-    detail: str = Field(max_length=256)
-    is_public: bool = Field(default=False)
-
-
-class NoteCreate(NoteBase):
-    pass
-
-
-class Note(NoteBase, table=True):
-    __tablename__ = "notes"
-
-    id: int = Field(primary_key=True, default=None)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(
-        sa_column=Column(
-            DateTime,
-            default=datetime.utcnow,
-            onupdate=datetime.utcnow,
-            nullable=False,
-        )
-    )
-    is_archived: bool = Field(default=False)
-
-    user_id: int = Field(foreign_key="users.id", nullable=False)
-
-    user: "User" = Relationship(back_populates="notes")
-
-
-class NoteUpdate(SQLModel):
-    title: Optional[str] = Field(max_length=32)
-    detail: Optional[str] = Field(max_length=256)
-    is_public: Optional[bool]
-    is_archived: Optional[bool]
 
 
 class APIToken(SQLModel):
